@@ -6,7 +6,7 @@ from components.candles import Candles
 from components.strategies import Strategies
 from components.signals import Signals
 
-log = Logger(loglevel=2, persist=True, rotation_interval=1)
+log = Logger(loglevel=3, persist=True, rotation_interval=1)
 log.info("Application starting")
 
 #
@@ -108,6 +108,8 @@ def websocket_message(ws, message):
                 print("Action: {}".format(v["action"]))
                 print("Score: {}".format(v["score"]))
                 print("Reason: {}".format(v["reason"]))
+                print("Values: {}".format(v["data"]))
+
                 signals_score += v["score"]
                 print("\n")
 

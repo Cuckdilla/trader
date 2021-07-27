@@ -41,7 +41,7 @@ class Signals:
         d = datetime.datetime.now()
         
         with open("signal-history.log", "a+") as h:
-            h.write(f'{d}: {signal_name} ({signal})')
+            h.write(f"{d}: {signal_name} ({signal})\n")
 
         self.signals_history[d: {signal_name: signal}]
 
@@ -67,7 +67,7 @@ class Signals:
             # Below threshold of 20, indicates RSI oversold
             signal_name = "stochastic_oversold"
             if k < 20 and d < 20:
-                self.add_condition(signal_name, { "action": "buy", "reason": "Both K and D line are below 20", "stoch_k": k, "stoch_d": d, "score": 3 })
+                self.add_condition(signal_name, { "action": "buy", "reason": "Both K and D line are below 20", "score": 3, "data": { "stoch_k": k, "stoch_d": d }})
             else:
                 self.del_condition(signal_name)
 
@@ -75,7 +75,7 @@ class Signals:
             # K line higher than D line indicates a bullish market
             signal_name = "stochastic_bullish_market"
             if k > d:
-                self.add_condition(signal_name, { "action": "none", "reason": "K line is above the D line",  "stoch_k": k, "stoch_d": d, "score": 1 })
+                self.add_condition(signal_name, { "action": "none", "reason": "K line is above the D line", "score": 1, "data": { "stoch_k": k, "stoch_d": d }})
                 self.market_is_bullish = True
             else:
                 self.del_condition(signal_name)
@@ -84,7 +84,7 @@ class Signals:
             # Bearish market
             signal_name = "stochastic_bearish_market"
             if k < d:
-                self.add_condition(signal_name, { "action": "none", "reason": "K line is below the D line",   "stoch_k": k, "stoch_d": d, "score": 1 })
+                self.add_condition(signal_name, { "action": "none", "reason": "K line is below the D line", "score": 1, "data": { "stoch_k": k, "stoch_d": d }})
                 self.market_is_bullish = False
             else:
                 self.del_condition(signal_name)
@@ -92,14 +92,14 @@ class Signals:
             # Bullish crossover 
             signal_name = "stochastic_bullish_crossover"
             if k > d and previous_k < previous_d:
-                self.add_condition(signal_name, { "action": "buy", "reason": "K crossed over D",   "stoch_k": k, "stoch_d": d, "score": 6 })                
+                self.add_condition(signal_name, { "action": "buy", "reason": "K crossed over D", "score": 6, "data": { "stoch_k": k, "stoch_d": d } })                
             else:
                 self.del_condition(signal_name)
 
             # Bearish crossover 
             signal_name = "stochastic_bullish_crossover"
             if k < d and previous_k > previous_d:
-                self.add_condition(signal_name, { "action": "sell", "reason": "D crossed over K",   "stoch_k": k, "stoch_d": d, "score": 6 })            
+                self.add_condition(signal_name, { "action": "sell", "reason": "D crossed over K", "score": 6, "data": { "stoch_k": k, "stoch_d": d,  }})            
             else:
                 self.del_condition(signal_name)
 
@@ -121,15 +121,15 @@ class Signals:
 
         self.log.info("Evaluating: Trading volume")
 
-        signal_name = "volume_above_200_ma"
+        signal_name = "volume_above_20_ma"
 
-        if "SMA-200-volume" in chart:
+        if "SMA-20-volume" in chart:
             
-            if chart["volume"].iat[-1] > chart["SMA-200-volume"].iat[-1]:
-                self.add_condition(signal_name, { "action": "buy", "reason": "Trading volume is above SMA-200", "volume": chart["volume"].iat[-1], "SMA-200-volume": chart["SMA-200-volume"].iat[-1], "score": 2 })
+            if chart["volume"].iat[-1] > chart["SMA-20-volume"].iat[-1]:
+                self.add_condition(signal_name, { "action": "buy", "reason": "Trading volume is above SMA-200", "score": 2, "data": { "volume": chart["volume"].iat[-1], "SMA-20-volume": chart["SMA-20-volume"].iat[-1]} })
   
         else:
-            self.log.warning("SMA-200-volume has not yet been calculated.")
+            self.log.warning("SMA-20-volume has not yet been calculated.")
 
 
 #
