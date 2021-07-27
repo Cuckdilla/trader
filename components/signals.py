@@ -124,7 +124,7 @@ class Signals:
         signal_name = "volume_above_20_ma"
 
         if "SMA-20-volume" in chart:
-            
+            self.log.debug("Volume: {} (SMA-20: {})".format(chart["volume"].iat[-1], chart["SMA-20-volume"].iat[-1]))
             if chart["volume"].iat[-1] > chart["SMA-20-volume"].iat[-1]:
                 self.add_condition(signal_name, { "action": "buy", "reason": "Trading volume is above SMA-200", "score": 2, "data": { "volume": chart["volume"].iat[-1], "SMA-20-volume": chart["SMA-20-volume"].iat[-1]} })
   

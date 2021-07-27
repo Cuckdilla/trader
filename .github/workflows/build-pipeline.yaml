@@ -2,7 +2,7 @@ name: Build image and Push to registry
 on: push
 
 jobs:
-  build:
+  ImageBuild:
     name: Build and push image
     runs-on: ubuntu-20.04
 
@@ -32,3 +32,12 @@ jobs:
 
     - name: Print image url
       run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+
+  SecurityScan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/python-3.8@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
