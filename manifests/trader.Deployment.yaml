@@ -16,5 +16,5 @@ spec:
         app: trader
     spec:
       containers:
-      - image: 
+      - image: busybox
         name: busybox 
