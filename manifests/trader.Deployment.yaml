@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: trader
+  name: trader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trader
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: trader
+    spec:
+      containers:
+      - image: 
+        name: busybox
