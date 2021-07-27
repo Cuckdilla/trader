@@ -44,6 +44,7 @@ jobs:
 
   DeployToKubernetes:
     runs-on: ubuntu-latest
+    - uses: actions/checkout@master
     - name: Deploy ArgoCD
       env:
         LINODE_TOKEN: ${{ secrets.LINODE_TOKEN }}
