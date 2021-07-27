@@ -9,7 +9,7 @@ import mplfinance as mpf
 
 class Candles:
 
-    def __init__(self, token: str, interval: int, timeframe=None, heikinashi=False, logger=None):    
+    def __init__(self, token: str, interval: int, timeframe=None, heikinashi=False, logger=None):
 
         if logger is None:
             raise Exception("An instance of the logger class is required.")
@@ -21,7 +21,6 @@ class Candles:
 
         self.log                = logger        
         self.client             = Client()
-        self.ws                 = None
         self.last_candle        = pd.Series()
 
         self.chart_columns      = ["opentime", "open", "high", "low", "close", "volume", "closetime"]
@@ -34,8 +33,6 @@ class Candles:
 
     # Creates a pandas dataframe, representing the chart, or table of "candles".
     def create_chart(self):
-        
-        self.log.info("Creating initial chart")
 
         klines = self.get_historical_klines()
         chart = []
