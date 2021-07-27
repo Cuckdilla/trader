@@ -17,4 +17,4 @@ spec:
     spec:
       containers:
       - image: 
-        name: busybox
+        name: busybox 
