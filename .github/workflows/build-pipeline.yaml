@@ -44,10 +44,11 @@ jobs:
 
   DeployToKubernetes:
     runs-on: ubuntu-latest
-    - uses: actions/checkout@master
-    - name: Deploy ArgoCD
-      env:
-        LINODE_TOKEN: ${{ secrets.LINODE_TOKEN }}
-      run: |
-        chmod +x .github/workflows/script.sh
-        bash .github/workflows/script.sh "$LINODE_TOKEN"
+    steps:
+      - uses: actions/checkout@master
+      - name: Deploy ArgoCD
+        env:
+          LINODE_TOKEN: ${{ secrets.LINODE_TOKEN }}
+        run: |
+          chmod +x .github/workflows/script.sh
+          bash .github/workflows/script.sh "$LINODE_TOKEN"
