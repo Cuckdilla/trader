@@ -1,0 +1,14 @@
+config
+discord-webhook
+matplotlib
+numpy
+pandas
+plotly
+psutil
+python-binance
+python-dateutil
+virtualenv
+websockets
+mplfinance
+websocket
+websocket-client

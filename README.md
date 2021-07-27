@@ -1,2 +1,2 @@
 # trader
-Crypto trading bot
+Python trading bot
