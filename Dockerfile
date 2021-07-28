@@ -1,12 +1,9 @@
-FROM debian:buster-slim
+FROM ubuntu:21.04
 
-RUN apt update 
-    && apt upgrade -y \
-    && apt install -y curl python3-pip \
-    && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl \
-    && chmod +x /usr/local/bin/kubectl \
-    && mkdir /app \
-    && cd /app
+RUN apt-get update 
+    && apt-get upgrade -y \
+    && apt-get install -y curl python3-pip \
+    && mkdir /app
 
 WORKDIR /app
 
