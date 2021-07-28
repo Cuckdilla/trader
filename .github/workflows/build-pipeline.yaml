@@ -41,14 +41,5 @@ jobs:
         uses: snyk/actions/python-3.8@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-  DeployToKubernetes:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Deploy ArgoCD
-        env:
-          LINODE_TOKEN: ${{ secrets.LINODE_TOKEN }}
-        run: |
-          chmod +x .github/workflows/script.sh
-          bash .github/workflows/script.sh "$LINODE_TOKEN"
+        with:
+          args: --severity-threshold=high
