@@ -49,7 +49,7 @@ class Signals:
 # STOCHASTIC RSI
 #
 
-    def stochastic_buy_signal(self, chart):
+    def stochastic_rsi(self, chart):
 
         self.log.info("Evaluating: Stochastic RSI indicator")
 
@@ -108,6 +108,33 @@ class Signals:
 
 
 #
+# Moving Average
+#
+
+    def moving_average(self, chart):
+        
+        self.log.debug("Checking for Moving Average signals")
+
+        moving_averages = ["SMA-200-close", "SMA-100-close", "SMA-50-close", "SMA-20-close"]
+
+        last_close = chart["close"].iat[-1]
+
+        for ma in moving_averages:
+                
+            if ma in chart:
+                
+                signal_name = f"price_above_{ma}"
+                
+                if last_close > chart[ma].iat[-1]:
+                    self.log.debug(f"price is higher than {ma}")
+                    self.add_condition(signal_name, { "action": "buy", "reason": "The current closing price is higher than " + ma, "score": 3, "data": { "price": last_close, ma: chart[ma].iat[-1] }})
+                else:
+                    self.log.debug(f"price is lower than {ma}")
+                    self.del_condition(signal_name)
+
+
+
+#
 # RELATIVE STRENGTH INDEX
 #
 
@@ -117,7 +144,7 @@ class Signals:
 #
 
 
-    def trading_volume_moving_average(self, chart):
+    def trading_volume(self, chart):
 
         self.log.info("Evaluating: Trading volume")
 

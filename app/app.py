@@ -5,6 +5,7 @@ from components.logger import Logger
 from components.candles import Candles
 from components.strategies import Strategies
 from components.signals import Signals
+from components.bookmaker import Bookie
 
 log = Logger(loglevel=3, persist=True, rotation_interval=1)
 log.info("Application starting")
@@ -43,7 +44,6 @@ def open_socket():
     log.info("Connection to websocket ({})".format(socket_url))
     
     ws = websocket.WebSocketApp(socket_url, on_open=websocket_opened, on_close=websocket_closed, on_message=websocket_message)
-    
     ws.run_forever()
 
 def websocket_opened(ws):
@@ -87,14 +87,19 @@ def websocket_message(ws, message):
 
         log.debug("Candle closed at {}. Open: {}, High: {}, Low: {}".format(candle_close, candle_open, candle_high, candle_low))
 
-
         # Indicators
         strategies.calculate_bollinger_bands(candles.chart)
         strategies.calculate_stochastic_rsi(candles.chart)
-        strategies.calculate_simple_moving_average(candles.chart, 200, "volume")
+        strategies.calculate_simple_moving_average(candles.chart, 200, "close")
+        strategies.calculate_simple_moving_average(candles.chart, 100, "close")
+        strategies.calculate_simple_moving_average(candles.chart, 50, "close")
+        strategies.calculate_simple_moving_average(candles.chart, 20, "close")
+        strategies.calculate_simple_moving_average(candles.chart, 20, "volume")
+        strategies.calculate_macd(candles.chart)
 
-        signals.stochastic_buy_signal(candles.chart)
-        signals.trading_volume_moving_average(candles.chart)
+        signals.stochastic_rsi(candles.chart)
+        signals.trading_volume(candles.chart)
+        signals.moving_average(candles.chart)
         
 
 
@@ -119,16 +124,15 @@ def websocket_message(ws, message):
         else:
                 
             print("\nNo signals\n")
-
-        print("\n" + candles.chart.tail(1))
-        print("\n---\n")
         
 
+        print(candles.chart)
 
 if __name__ == "__main__":    
     candles     = Candles(token=token, interval=interval, timeframe=timeframe, heikinashi=heikinashi, logger=log)
     strategies  = Strategies(log)
     signals     = Signals(log)
+    bookie      = Bookie(signals)
 
     # Start websocket
     open_socket()
