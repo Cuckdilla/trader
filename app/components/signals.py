@@ -40,10 +40,11 @@ class Signals:
     def record_signal(self, signal_name, signal):
         d = datetime.datetime.now()
         
+        entry = "{}: {} {}".format(d, signal_name, signal)
         with open("signal-history.log", "a+") as h:
-            h.write(f"{d}: {signal_name} ({signal})\n")
+            h.write(entry)
 
-        self.signals_history[d: {signal_name: signal}]
+        self.signals_history[d] = {signal_name: signal}
 
 #
 # STOCHASTIC RSI
@@ -68,6 +69,13 @@ class Signals:
             signal_name = "stochastic_oversold"
             if k < 20 and d < 20:
                 self.add_condition(signal_name, { "action": "buy", "reason": "Both K and D line are below 20", "score": 3, "data": { "stoch_k": k, "stoch_d": d }})
+            else:
+                self.del_condition(signal_name)
+
+            # Above threshold of 80, indicates RSI oversold
+            signal_name = "stochastic_overbought"
+            if k > 80 and d > 80:
+                self.add_condition(signal_name, { "action": "sell", "reason": "Both K and D line are above 80", "score": 3, "data": { "stoch_k": k, "stoch_d": d }})
             else:
                 self.del_condition(signal_name)
 
