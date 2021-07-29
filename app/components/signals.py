@@ -13,11 +13,6 @@ class Signals:
         self.signals_columns    = ["Name", "Type", "Action", "Description", "Weight", "Values"]
         self.signals            = pd.DataFrame(columns=self.signals_columns)
 
-
-        # List required conditions to flag a buy or sell.
-        # All conditions must be met.
-        self.required_conditions = {}
-
         self.market_is_bullish = False
 
 
