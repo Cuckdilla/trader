@@ -1,14 +1,9 @@
-FROM ubuntu:21.04
-
-RUN apt-get update 
-    && apt-get upgrade -y \
-    && apt-get install -y curl python3-pip \
-    && mkdir /app
+FROM python:3.9.6-slim-buster
 
 WORKDIR /app
 
-COPY ./app .
+COPY app/ .
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT ["/usr/bin/python3 app.py"]
+ENTRYPOINT ["python3", "app.py"]
