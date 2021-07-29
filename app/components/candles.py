@@ -1,25 +1,23 @@
 import websocket, datetime, json
-
 from binance.client import Client
 from matplotlib.pyplot import savefig
+from components.logger import Logger
 
 import pandas as pd
 import numpy as np
 import mplfinance as mpf
 
+
 class Candles:
 
-    def __init__(self, token: str, interval: int, timeframe=None, heikinashi=False, logger=None):
-
-        if logger is None:
-            raise Exception("An instance of the logger class is required.")
+    def __init__(self, token: str, interval="1m", timeframe="6 hours ago UTC", heikinashi=False, loglevel=3):
 
         self.token              = token
         self.interval           = interval
         self.timeframe          = timeframe
         self.heikinashi         = heikinashi
 
-        self.log                = logger        
+        self.log                = Logger(name="candles", loglevel=loglevel)
         self.client             = Client()
         self.last_candle        = pd.Series()
 
@@ -75,33 +73,20 @@ class Candles:
                     lowprice    = min([float(data[1]), float(data[3]), float(data[4])])
                     closeprice  = (float(data[1]) + float(data[2]) + float(data[3]) + float(data[4])) / 4
                 
-
                 upperwick    = highprice - closeprice
                 lowerwick    = openprice - lowprice
                 bodysize     = closeprice - openprice
 
                 chart.append([opentime, openprice, highprice, lowprice, closeprice, volume, closetime, bodysize, upperwick, lowerwick])
 
-
             self.chart = pd.DataFrame(chart, columns=self.chart_columns+["bodysize", "upperwick", "lowerwick"])
             
         else:
 
-            self.log.info("Creating chart")
-
             for data in klines:
-                chart.append([
-                    data[0],
-                    float(data[1]),
-                    float(data[2]),
-                    float(data[3]),
-                    float(data[4]),
-                    float(data[5]),
-                    data[6]
-                ])
+                chart.append([data[0], float(data[1]), float(data[2]), float(data[3]), float(data[4]), float(data[5]), data[6]])
 
             self.chart = pd.DataFrame(chart, columns=self.chart_columns)
-
 
         # Finalize chart by converting epochs to datetime objects.
         # Set the dataframe index to be "opentime", and drop that from the columns

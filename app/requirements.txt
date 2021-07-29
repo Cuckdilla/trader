@@ -1,0 +1,8 @@
+discord-webhook
+matplotlib
+numpy
+pandas
+plotly
+python-binance
+mplfinance
+websocket-client

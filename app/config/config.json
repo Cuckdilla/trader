@@ -1,5 +1,12 @@
 {
-    "api_key": "",
-    "api_secret": "",
-    "token": "ETH"
+    "binance": {
+        "api_key": "",
+        "api_secret": ""
+    },
+
+    "strategies": {
+        "BollingerBands": {
+            
+        }
+    }
 }

@@ -3,7 +3,7 @@ import datetime, json
 
 class Logger:
 
-    def __init__(self, name="logger", loglevel=0, persist=False, flush=True, rotation_interval=0, format="text"):
+    def __init__(self, name="logger", loglevel=3, persist=True, flush=True, rotation_interval=1, format="text"):
 
         """ The logger gets initialized with a name (logger by default), which is also part of the name 
             of the logfiles, if persistence is enabled. If rotation_interval (log rotation interval) is set 
@@ -57,8 +57,8 @@ class Logger:
                 self.debug("Log rotation has been disabled due to an error with the configuration.")
 
 
-        self.debug("Logger initialized. Loglevel: {}, Persistence: {}, Logfile: {}, Flushing: {}".format(
-            self.loglevel, self.persist, self.logfile, self.flush
+        self.debug('Logger "{}", Loglevel: {}, Logfile: {}'.format(
+            self.name, self.loglevel, self.logfile
         ))
 
     def timestamp(self):
@@ -82,7 +82,7 @@ class Logger:
         if self.persist:
             self.log_needs_rotation()
 
-            with open(self.logfile, 'a+') as h:
+            with open("./logs/" + self.logfile, 'a+') as h:
                 h.write(logline + "\n")
 
         print(logline, flush=self.flush)
@@ -101,7 +101,7 @@ class Logger:
 
     def custom_log(self, logfile, message):
 
-        with open(logfile, 'a') as h:
+        with open("./logs/" + logfile, 'a') as h:
             message = str(message)
             h.write(message + "\n")
 

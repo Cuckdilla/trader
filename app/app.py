@@ -7,8 +7,6 @@ from components.strategies import Strategies
 from components.signals import Signals
 from components.bookmaker import Bookie
 
-log = Logger(loglevel=3, persist=True, rotation_interval=1)
-log.info("Application starting")
 
 #
 # Configuration
@@ -22,16 +20,21 @@ try:
     interval    = config["trading"]["interval"]
     timeframe   = config["trading"]["timeframe"]
     heikinashi  = config["trading"].getboolean("heikinashi")
-except Exception as e:
-    log.error("Unable to get all required parameters from configuration file")
-    print(e)
-    sys.exit(1)
 
-#
-# Main
-#
-signals = ["BB", "STOCH"]
-last_candle = []
+    loglevel    = config["logging"].getint("loglevel")
+
+except Exception as e:
+    print(e)
+    sys.exit("Unable to get all required parameters from configuration file")
+
+try:
+    candles     = Candles(token, interval, timeframe, heikinashi, loglevel)
+    strategies  = Strategies(loglevel=loglevel)
+    signals     = Signals(loglevel=loglevel)
+    bookie      = Bookie(signals)
+    log         = Logger(name="app", loglevel=loglevel)
+except:
+    sys.exit("Could not instantiate all classes")
 
 
 #
@@ -41,7 +44,7 @@ last_candle = []
 def open_socket():
 
     socket_url = "wss://stream.binance.com:9443/ws/{}@kline_{}".format(token.lower(), interval)
-    log.info("Connection to websocket ({})".format(socket_url))
+    log.info("Connecting to Binance websocket")
     
     ws = websocket.WebSocketApp(socket_url, on_open=websocket_opened, on_close=websocket_closed, on_message=websocket_message)
     ws.run_forever()
@@ -50,7 +53,7 @@ def websocket_opened(ws):
     log.info("Connected!")
 
 def websocket_closed(ws, close_status_code, close_message):
-    log.info("Connection to websocket closed!")
+    log.info("Websocket connection closed!")
     log.debug('close_status_code: {} close_message: {}'.format(close_status_code, close_message))
 
 def websocket_message(ws, message):
@@ -61,7 +64,8 @@ def websocket_message(ws, message):
     
     # When candle is closed
     if candle["x"]:
-        
+
+        # Create a new thread to handle the processing of the chart, indicators, and signaling
         t = threading.Thread(target=candle_closed, kwargs=candle)
         t.start()
 
@@ -92,7 +96,7 @@ def candle_closed(**candle):
 
     log.debug("Candle closed at {}. Open: {}, High: {}, Low: {}".format(candle_close, candle_open, candle_high, candle_low))
 
-    # Indicators
+    # Indicators -- 
     strategies.calculate_bollinger_bands(candles.chart)
     strategies.calculate_stochastic_rsi(candles.chart)
     strategies.calculate_simple_moving_average(candles.chart, 200, "close")
@@ -105,38 +109,16 @@ def candle_closed(**candle):
     signals.stochastic_rsi(candles.chart)
     signals.trading_volume(candles.chart)
     signals.moving_average(candles.chart)
+    signals.macd(candles.chart)
     
-
-
-    if len(signals.conditions) != 0:
-
-        signals_score = 0
-        print("\n")
-
-        for k,v in signals.conditions.items():
-            print("Signal: {}".format(k))
-            print("Action: {}".format(v["action"]))
-            print("Score: {}".format(v["score"]))
-            print("Reason: {}".format(v["reason"]))
-            print("Values: {}".format(v["data"]))
-
-            signals_score += v["score"]
-            print("\n")
-
-        print("Total score: {}".format(signals_score))
-        print("Market: Bullish") if signals.market_is_bullish else print("Market: Bearish")
-        print("\n")
-    else:
-            
+    if signals.signals.count == 0:
         print("\nNo signals\n")
-    
-    print(candles.chart.tail(1))
+    else:
+        print("\n")
+        print(signals.signals)
+        print("\n")
 
-if __name__ == "__main__":    
-    candles     = Candles(token=token, interval=interval, timeframe=timeframe, heikinashi=heikinashi, logger=log)
-    strategies  = Strategies(log)
-    signals     = Signals(log)
-    bookie      = Bookie(signals)
 
-    # Start websocket
+if __name__ == "__main__":
+
     open_socket()

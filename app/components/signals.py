@@ -1,16 +1,18 @@
 import pandas as pd
 import datetime
 
+from components.logger import Logger
+
 class Signals:
 
-    def __init__(self, logger=None):
-
-        if logger is None:
-            raise Exception("An instance of the logger class is required.")
+    def __init__(self, loglevel=3):
    
-        self.log                = logger
-        self.conditions         = {}
-        self.signals_history    = {}
+        self.log                = Logger(name="signals", loglevel=loglevel)
+
+        # Signals as Pandas dataframe
+        self.signals_columns    = ["Name", "Type", "Action", "Description", "Weight", "Values"]
+        self.signals            = pd.DataFrame(columns=self.signals_columns)
+
 
         # List required conditions to flag a buy or sell.
         # All conditions must be met.
@@ -18,24 +20,26 @@ class Signals:
 
         self.market_is_bullish = False
 
-    def add_condition(self, signal_name, signal):
-        self.log.debug(f"Checking if {signal_name} already exists")
-        
-        if signal_name in self.conditions:
-            self.log.debug(f"{signal_name} already in conditions")
-        
-        else:
-            self.log.debug("Adding signal")
-            self.conditions[signal_name] = signal
-            self.record_signal(signal_name, signal)
 
+    def add_signal(self, signal):
 
-    def del_condition(self, signal_name):
-        
-        if signal_name in self.conditions:
+        if signal[0] not in self.signals["Name"].values:
 
-            self.log.debug(f"Removing aged signal {signal_name}")
-            del self.conditions[signal_name]
+            self.signals_columns    = ["Name", "Action", "Type", "Description", "Weight", "Values"]
+            signals                 = pd.DataFrame([signal], columns=self.signals_columns)
+
+            self.signals = self.signals.append(signals, ignore_index=True)
+
+            self.log.debug("Added signal {}".format(signal[0]))
+
+    def drop_signal(self, signal_name):
+
+        if signal_name in self.signals["Name"].values:
+            signal_index = self.signals[self.signals["Name"] == signal_name].index
+            self.signals.drop(signal_index, inplace=True)
+
+            self.log.debug("Dropped signal {}".format(signal_name))
+
 
     def record_signal(self, signal_name, signal):
         d = datetime.datetime.now()
@@ -52,7 +56,7 @@ class Signals:
 
     def stochastic_rsi(self, chart):
 
-        self.log.info("Evaluating: Stochastic RSI indicator")
+        self.log.debug("Evaluating indicator: Stochastic RSI")
 
         # Indicator exists in chart
         if "stoch_k" in chart and "stoch_d" in chart:
@@ -68,48 +72,52 @@ class Signals:
             # Below threshold of 20, indicates RSI oversold
             signal_name = "stochastic_oversold"
             if k < 20 and d < 20:
-                self.add_condition(signal_name, { "action": "buy", "reason": "Both K and D line are below 20", "score": 3, "data": { "stoch_k": k, "stoch_d": d }})
+                self.add_signal([signal_name, "Buy", "Oscillator", "K and D lines are below lower threshold (20)", 1, k])
             else:
-                self.del_condition(signal_name)
+                self.drop_signal(signal_name)
 
             # Above threshold of 80, indicates RSI oversold
             signal_name = "stochastic_overbought"
             if k > 80 and d > 80:
-                self.add_condition(signal_name, { "action": "sell", "reason": "Both K and D line are above 80", "score": 3, "data": { "stoch_k": k, "stoch_d": d }})
+                self.add_signal([signal_name, "Sell", "Oscillator", "K and D lines are above upper threshold (80)", 1, k])
             else:
-                self.del_condition(signal_name)
+                self.drop_signal(signal_name)
 
 
             # K line higher than D line indicates a bullish market
             signal_name = "stochastic_bullish_market"
             if k > d:
-                self.add_condition(signal_name, { "action": "none", "reason": "K line is above the D line", "score": 1, "data": { "stoch_k": k, "stoch_d": d }})
+                self.add_signal([signal_name, "Neutral", "Oscillator", "K line is above D, indicating bullish market", 1, k])
+
                 self.market_is_bullish = True
             else:
-                self.del_condition(signal_name)
+                self.drop_signal(signal_name)
 
 
             # Bearish market
             signal_name = "stochastic_bearish_market"
             if k < d:
-                self.add_condition(signal_name, { "action": "none", "reason": "K line is below the D line", "score": 1, "data": { "stoch_k": k, "stoch_d": d }})
+                self.add_signal([signal_name, "Neutral", "Oscillator", "K line is below D, indicating bearish market", 1, k])                
+
                 self.market_is_bullish = False
             else:
-                self.del_condition(signal_name)
+                self.drop_signal(signal_name)
 
             # Bullish crossover 
             signal_name = "stochastic_bullish_crossover"
             if k > d and previous_k < previous_d:
-                self.add_condition(signal_name, { "action": "buy", "reason": "K crossed over D", "score": 6, "data": { "stoch_k": k, "stoch_d": d } })                
+                self.add_signal([signal_name, "Buy", "Oscillator", "K crossed over D", 3, k])
+
             else:
-                self.del_condition(signal_name)
+                self.drop_signal(signal_name)
 
             # Bearish crossover 
             signal_name = "stochastic_bullish_crossover"
             if k < d and previous_k > previous_d:
-                self.add_condition(signal_name, { "action": "sell", "reason": "D crossed over K", "score": 6, "data": { "stoch_k": k, "stoch_d": d,  }})            
+                self.add_signal([signal_name, "Sell", "Oscillator", "D crossed over K", 3, k])
+
             else:
-                self.del_condition(signal_name)
+                self.drop_signal(signal_name)
 
         else:
             self.log.warning("Chart does not have Stocastic indicators.")
@@ -120,9 +128,9 @@ class Signals:
 #
 
     def moving_average(self, chart):
-        
-        self.log.debug("Checking for Moving Average signals")
 
+        self.log.debug("Evaluating indicator: Simple Moving Average")
+        
         moving_averages = ["SMA-200-close", "SMA-100-close", "SMA-50-close", "SMA-20-close"]
 
         last_close = chart["close"].iat[-1]
@@ -135,10 +143,11 @@ class Signals:
                 
                 if last_close > chart[ma].iat[-1]:
                     self.log.debug(f"price is higher than {ma}")
-                    self.add_condition(signal_name, { "action": "buy", "reason": "The current closing price is higher than " + ma, "score": 3, "data": { "price": last_close, ma: chart[ma].iat[-1] }})
+                    self.add_signal([signal_name, "Neutral", "Average", "Closing higher than Moving Average", 3, chart[ma].iat[-1]])
+
                 else:
                     self.log.debug(f"price is lower than {ma}")
-                    self.del_condition(signal_name)
+                    self.drop_signal(signal_name)
 
 
 
@@ -154,15 +163,15 @@ class Signals:
 
     def trading_volume(self, chart):
 
-        self.log.info("Evaluating: Trading volume")
+        self.log.debug("Evaluating indicator: Trading volume")
 
         signal_name = "volume_above_20_ma"
 
         if "SMA-20-volume" in chart:
             self.log.debug("Volume: {} (SMA-20: {})".format(chart["volume"].iat[-1], chart["SMA-20-volume"].iat[-1]))
             if chart["volume"].iat[-1] > chart["SMA-20-volume"].iat[-1]:
-                self.add_condition(signal_name, { "action": "buy", "reason": "Trading volume is above SMA-200", "score": 2, "data": { "volume": chart["volume"].iat[-1], "SMA-20-volume": chart["SMA-20-volume"].iat[-1]} })
-  
+                self.add_signal([signal_name, "Buy", "Average", "Trading volume is higher than SMA-200", 1, chart["volume"].iat[-1]])
+
         else:
             self.log.warning("SMA-20-volume has not yet been calculated.")
 
@@ -173,6 +182,36 @@ class Signals:
 
 # https://www.investopedia.com/terms/m/macd.asp
 
+    def macd(self, chart):
+        
+        self.log.debug("Evaluating indicator: MACD")
+
+        # Indicator exists in chart
+        if "MACD" in chart and "MACD-S" in chart:
+            
+            # Get latest indicator values
+            macd            = chart["MACD"].iat[-1]
+            signal          = chart["MACD-S"].iat[-1]
+
+            previous_macd   = chart["MACD"].iat[-2]
+            previous_signal = chart["MACD-S"].iat[-2]
+
+
+            # Bullish crossover 
+            signal_name = "macd_bullish_crossover"
+            if macd > signal and previous_macd < previous_signal:
+                self.log.debug("MACD crossed over the signal line")
+                self.add_signal([signal_name, "Buy", "Oscillator", "MACD crossed over the signal line", 2, macd]) 
+            else:
+                self.drop_signal(signal_name)
+
+            # Bearish crossover 
+            signal_name = "macd_bearish_crossover"
+            if macd < signal and previous_macd > previous_signal:
+                self.log.debug("Signal line crossed over MACD")
+                self.add_signal([signal_name, "Sell", "Oscillator", "The signal line crossed over the MACD", 2, macd]) 
+            else:
+                self.drop_signal(signal_name)
 
 
 #
