@@ -52,4 +52,4 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --file=app/requirements.txt --package-manager=pip
+          args: --file=app/requirements.txt --package-manager=pip --severity-threshold=high 
