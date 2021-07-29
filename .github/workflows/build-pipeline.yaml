@@ -5,6 +5,7 @@ on:
       - main
     paths:
     - "app/"
+    - ".github/workflows/"
   
   schedule:
     # Rebuild weekly to pick up patches for base image
