@@ -3,7 +3,7 @@ import pandas as pd
 
 from components.logger import Logger
 from components.candles import Candles
-from components.strategies import Strategies
+from components.indicators import Indicators
 from components.signals import Signals
 from components.bookmaker import Bookie
 
@@ -14,6 +14,8 @@ from components.bookmaker import Bookie
 
 config = configparser.ConfigParser()
 config.read("config/config.ini")
+
+print("Loading configuration..")
 
 try:
     token       = config["trading"]["token"]
@@ -29,7 +31,7 @@ except Exception as e:
 
 try:
     candles     = Candles(token, interval, timeframe, heikinashi, loglevel)
-    strategies  = Strategies(loglevel=loglevel)
+    indicators  = Indicators(loglevel=loglevel)
     signals     = Signals(loglevel=loglevel)
     bookie      = Bookie(signals)
     log         = Logger(name="app", loglevel=loglevel)
@@ -43,7 +45,7 @@ except:
 
 def open_socket():
 
-    log.info("Connecting to Binance..")
+    log.info("Connecting to Binance")
     socket_url = "wss://stream.binance.com:9443/ws/{}@kline_{}".format(token.lower(), interval)
     
     ws = websocket.WebSocketApp(socket_url, on_open=websocket_opened, on_close=websocket_closed, on_message=websocket_message)
@@ -91,34 +93,29 @@ def candle_closed(**candle):
         candles.chart.drop(index=candles.chart.index[-1], axis=0, inplace=True)
         
     log.debug("Appending latest candle to the chart")
+    
 
     candles.chart = candles.chart.append(last_candle, ignore_index=True)
 
-    # Indicators -- 
-    strategies.calculate_bollinger_bands(candles.chart)
-    strategies.calculate_stochastic_rsi(candles.chart)
-    strategies.calculate_simple_moving_average(candles.chart, 200, "close")
-    strategies.calculate_simple_moving_average(candles.chart, 100, "close")
-    strategies.calculate_simple_moving_average(candles.chart, 50, "close")
-    strategies.calculate_simple_moving_average(candles.chart, 20, "close")
-    strategies.calculate_simple_moving_average(candles.chart, 20, "volume")
-    strategies.calculate_macd(candles.chart)
+    indicators.calculate(candles.chart)
 
-    signals.stochastic_rsi(candles.chart)
-    signals.trading_volume(candles.chart)
-    signals.moving_average(candles.chart)
-    signals.macd(candles.chart)
+    signals.check(candles.chart)
+    print("\n")
 
-
-    if signals.signals.count != 0:
-        for index, signal in signals.signals.iterrows():
-            log.info("{} (weight: {})".format(signal["Description"], signal["Weight"]))
-
-    log.info("Candle closed at {}. O: {}, H: {}, L: {}".format(candle_close, candle_open, candle_high, candle_low))
-
+    log.info("Candle closed at {}. O: {}, H: {}, L: {} V: {}".format(candle_close, candle_open, candle_high, candle_low, candle_volume))
     log.info("Market is bullish") if signals.market_is_bullish else log.info("Market is bearish")
     log.info("Total weight of signals: {}".format(signals.signals["Weight"].sum()))
 
+    print("\n")
+    
+    if signals.signals.count != 0:
+        for index, signal in signals.signals.iterrows():
+            log.info("[{}] {} (weight: {})".format(signal["Action"], signal["Description"], signal["Weight"]))
+
+    print("\n")
+
+    print(candles.chart.tail(1))
+    
 if __name__ == "__main__":
 
     open_socket()

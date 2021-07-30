@@ -16,6 +16,14 @@ class Signals:
         self.market_is_bullish = False
 
 
+
+    def check(self, chart):
+
+        self.stochastic_rsi(chart)
+        self.trading_volume(chart)
+        self.moving_average(chart)
+        self.macd(chart)
+
     def add_signal(self, signal):
 
         if signal[0] not in self.signals["Name"].values:
@@ -101,7 +109,7 @@ class Signals:
             # Bullish crossover 
             signal_name = "stochastic_bullish_crossover"
             if k > d and previous_k < previous_d:
-                self.add_signal([signal_name, "Buy", "Oscillator", "K crossed over D", 3, k])
+                self.add_signal([signal_name, "Buy", "Oscillator", "K crossed over D", 1, k])
 
             else:
                 self.drop_signal(signal_name)
@@ -109,7 +117,7 @@ class Signals:
             # Bearish crossover 
             signal_name = "stochastic_bullish_crossover"
             if k < d and previous_k > previous_d:
-                self.add_signal([signal_name, "Sell", "Oscillator", "D crossed over K", 3, k])
+                self.add_signal([signal_name, "Sell", "Oscillator", "D crossed over K", 1, k])
 
             else:
                 self.drop_signal(signal_name)
@@ -139,7 +147,8 @@ class Signals:
 
                 if last_close > chart[ma].iat[-1]:
                     self.log.debug(f"Price is higher than {ma}")
-                    self.add_signal([signal_name, "Neutral", "Average", "Closing higher than Moving Average", 3, chart[ma].iat[-1]])
+                    
+                    self.add_signal([signal_name, "Neutral", "Average", f"Closing higher than Moving Average ({ma})", 1, chart[ma].iat[-1]])
 
                 else:
                     self.log.debug(f"Price is lower than {ma}")
@@ -149,7 +158,7 @@ class Signals:
                 signal_name = f"price_crossed_over_{ma}"
                 if last_close > chart[ma].iat[-1] and previous_close < chart[ma].iat[-2]:
                     self.log.debug(f"Price crossed over {ma}")
-                    self.add_signal([signal_name, "Neutral", "Average", f"Price crossed over {ma}", 3, chart[ma].iat[-1]])
+                    self.add_signal([signal_name, "Neutral", "Average", f"Price crossed over {ma}", 1, chart[ma].iat[-1]])
                 else:
                     self.log.debug(f"Price is lower than {ma}")
                     self.drop_signal(signal_name)
@@ -164,20 +173,19 @@ class Signals:
 # VOLUME
 #
 
-
-    def trading_volume(self, chart):
+    def trading_volume(self, chart, sma="SMA-20-volume"):
 
         self.log.debug("Evaluating indicator: Trading volume")
 
-        signal_name = "volume_above_20_ma"
+        signal_name = f"volume_above_{sma}"
 
-        if "SMA-20-volume" in chart:
-            self.log.debug("Volume: {} (SMA-20: {})".format(chart["volume"].iat[-1], chart["SMA-20-volume"].iat[-1]))
-            if chart["volume"].iat[-1] > chart["SMA-20-volume"].iat[-1]:
-                self.add_signal([signal_name, "Buy", "Average", "Trading volume is higher than SMA-200", 1, chart["volume"].iat[-1]])
+        if sma in chart:
+            self.log.debug("Volume: {} ({}: {})".format(chart["volume"].iat[-1], sma, chart["SMA-20-volume"].iat[-1]))
+            if chart["volume"].iat[-1] > chart[sma].iat[-1]:
+                self.add_signal([signal_name, "Neutral", "Average", f"Trading volume is higher than {sma}", 1, chart["volume"].iat[-1]])
 
         else:
-            self.log.warning("SMA-20-volume has not yet been calculated.")
+            self.log.warning(f"{sma} has not yet been calculated.")
 
 
 #
@@ -205,7 +213,7 @@ class Signals:
             signal_name = "macd_bullish_crossover"
             if macd > signal and previous_macd < previous_signal:
                 self.log.debug("MACD crossed over the signal line")
-                self.add_signal([signal_name, "Buy", "Oscillator", "MACD crossed over the signal line", 2, macd]) 
+                self.add_signal([signal_name, "Buy", "Oscillator", "MACD crossed over the signal line", 1, macd]) 
             else:
                 self.drop_signal(signal_name)
 
@@ -213,7 +221,7 @@ class Signals:
             signal_name = "macd_bearish_crossover"
             if macd < signal and previous_macd > previous_signal:
                 self.log.debug("Signal line crossed over MACD")
-                self.add_signal([signal_name, "Sell", "Oscillator", "The signal line crossed over the MACD", 2, macd]) 
+                self.add_signal([signal_name, "Sell", "Oscillator", "The signal line crossed over the MACD", 1, macd]) 
             else:
                 self.drop_signal(signal_name)
 

@@ -2,26 +2,40 @@
 import configparser
 from components.logger import Logger
 
-class Strategies:
+class Indicators:
 
-    def __init__(self, configfile="strategies.ini", loglevel=3):
+    def __init__(self, configfile="indicators.ini", loglevel=3):
 
-        self.log        = Logger(name="strategies", loglevel=loglevel)
+        self.log        = Logger(name="indicators", loglevel=loglevel)
 
         self.sources    = ["open", "high", "low", "close", "volume"]
         self.config     = configparser.ConfigParser()
         self.configfile = configfile
+
+
         
     def get_config(self):
         self.config.read(f"config/{self.configfile}")
         
 
-#
-# Helper functions
-#
-
     def is_valid_source(self, source):
         return source in self.sources
+
+
+    def calculate(self, chart):
+
+        # This should be populated based on config
+
+        self.calculate_bollinger_bands(chart)
+        self.calculate_stochastic_rsi(chart)
+        self.calculate_simple_moving_average(chart, 300, "close")
+        self.calculate_simple_moving_average(chart, 200, "close")
+        self.calculate_simple_moving_average(chart, 150, "close")
+        self.calculate_simple_moving_average(chart, 100, "close")
+        self.calculate_simple_moving_average(chart, 50, "close")
+        self.calculate_simple_moving_average(chart, 20, "close")
+        self.calculate_simple_moving_average(chart, 20, "volume")
+        self.calculate_macd(chart)
 
 #
 # SMA
@@ -91,4 +105,6 @@ class Strategies:
         
         chart["MACD"]   = ema12 - ema26
         chart["MACD-S"] = chart["MACD"].ewm(span=9, adjust=False).mean()
+
+
 
