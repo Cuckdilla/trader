@@ -43,8 +43,8 @@ except:
 
 def open_socket():
 
+    log.info("Connecting to Binance..")
     socket_url = "wss://stream.binance.com:9443/ws/{}@kline_{}".format(token.lower(), interval)
-    log.info("Connecting to Binance websocket")
     
     ws = websocket.WebSocketApp(socket_url, on_open=websocket_opened, on_close=websocket_closed, on_message=websocket_message)
     ws.run_forever()
@@ -94,8 +94,6 @@ def candle_closed(**candle):
 
     candles.chart = candles.chart.append(last_candle, ignore_index=True)
 
-    log.debug("Candle closed at {}. Open: {}, High: {}, Low: {}".format(candle_close, candle_open, candle_high, candle_low))
-
     # Indicators -- 
     strategies.calculate_bollinger_bands(candles.chart)
     strategies.calculate_stochastic_rsi(candles.chart)
@@ -110,14 +108,16 @@ def candle_closed(**candle):
     signals.trading_volume(candles.chart)
     signals.moving_average(candles.chart)
     signals.macd(candles.chart)
-    
-    if signals.signals.count == 0:
-        print("\nNo signals\n")
-    else:
-        print("\n")
-        print(signals.signals)
-        print("\n")
 
+
+    if signals.signals.count != 0:
+        for index, signal in signals.signals.iterrows():
+            log.info("{} (weight: {})".format(signal["Description"], signal["Weight"]))
+
+    log.info("Candle closed at {}. O: {}, H: {}, L: {}".format(candle_close, candle_open, candle_high, candle_low))
+
+    log.info("Market is bullish") if signals.market_is_bullish else log.info("Market is bearish")
+    log.info("Total weight of signals: {}".format(signals.signals["Weight"].sum()))
 
 if __name__ == "__main__":
 

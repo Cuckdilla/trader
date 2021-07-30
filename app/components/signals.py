@@ -127,23 +127,32 @@ class Signals:
         self.log.debug("Evaluating indicator: Simple Moving Average")
         
         moving_averages = ["SMA-200-close", "SMA-100-close", "SMA-50-close", "SMA-20-close"]
-
         last_close = chart["close"].iat[-1]
+        previous_close = chart["close"].iat[-2]
 
         for ma in moving_averages:
                 
             if ma in chart:
                 
+                # Price above average
                 signal_name = f"price_above_{ma}"
-                
+
                 if last_close > chart[ma].iat[-1]:
-                    self.log.debug(f"price is higher than {ma}")
+                    self.log.debug(f"Price is higher than {ma}")
                     self.add_signal([signal_name, "Neutral", "Average", "Closing higher than Moving Average", 3, chart[ma].iat[-1]])
 
                 else:
-                    self.log.debug(f"price is lower than {ma}")
+                    self.log.debug(f"Price is lower than {ma}")
                     self.drop_signal(signal_name)
 
+                # Crossover
+                signal_name = f"price_crossed_over_{ma}"
+                if last_close > chart[ma].iat[-1] and previous_close < chart[ma].iat[-2]:
+                    self.log.debug(f"Price crossed over {ma}")
+                    self.add_signal([signal_name, "Neutral", "Average", f"Price crossed over {ma}", 3, chart[ma].iat[-1]])
+                else:
+                    self.log.debug(f"Price is lower than {ma}")
+                    self.drop_signal(signal_name)
 
 
 #
