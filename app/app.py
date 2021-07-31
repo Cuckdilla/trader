@@ -19,6 +19,7 @@ parser.add_argument('-i','--interval', help='Candle frequency, i.e 1m, 5m, 24h',
 parser.add_argument('-t','--timeframe', help='How far back the data goes. Binance specific string such as "24 hours ago UTC', required=False)
 parser.add_argument('-x','--heikinashi', help='Create chart using Heikin Ashi', required=False)
 parser.add_argument('-l','--loglevel', help='0 = INFO, 3 = DEBUG', required=False)
+parser.add_argument('-b','--backtest', help='Simulate trades', required=False)
 args = vars(parser.parse_args())
 
 
@@ -41,6 +42,9 @@ try:
     timeframe   = str(args["timeframe"]) if args["timeframe"] is not None else config["trading"]["timeframe"]
     heikinashi  = bool(args["heikinashi"]) if args["heikinashi"] is not None else config["trading"].getboolean("heikinashi")
     loglevel    = int(args["loglevel"]) if args["loglevel"] is not None else config["logging"].getint("loglevel")
+
+    # Backtesting not yet implemented
+    backtest    = bool(args["backtest"]) if args["backtest"] is not None else False
 
 except Exception as e:
     print(e)
