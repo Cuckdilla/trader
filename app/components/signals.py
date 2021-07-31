@@ -199,6 +199,9 @@ class Signals:
 
         self.log.debug("Evaluating indicator: Trading volume")
 
+        last_close = chart["close"].iat[-1]
+        last_open = chart["open"].iat[-1]
+
         # Volume SMA bullish market
         signal_name = f"volume_above_{sma}"
 

@@ -1,4 +1,5 @@
-import sys, configparser, websocket, json, threading
+import sys, configparser, websocket, json, threading, argparse
+
 import pandas as pd
 
 from components.logger import Logger
@@ -6,6 +7,19 @@ from components.candles import Candles
 from components.indicators import Indicators
 from components.signals import Signals
 from components.bookmaker import Bookie
+
+
+#
+# Command line options
+#
+
+parser = argparse.ArgumentParser(description='Trading bot')
+parser.add_argument('-p','--pair', help='pair paid, i.e ETHUSDT', required=False)
+parser.add_argument('-i','--interval', help='Candle frequency, i.e 1m, 5m, 24h', required=False)
+parser.add_argument('-t','--timeframe', help='How far back the data goes. Binance specific string such as "24 hours ago UTC', required=False)
+parser.add_argument('-x','--heikinashi', help='Create chart using Heikin Ashi', required=False)
+parser.add_argument('-l','--loglevel', help='0 = INFO, 3 = DEBUG', required=False)
+args = vars(parser.parse_args())
 
 
 #
@@ -18,19 +32,22 @@ config.read("config/config.ini")
 print("Loading configuration..")
 
 try:
-    token       = config["trading"]["token"]
-    interval    = config["trading"]["interval"]
-    timeframe   = config["trading"]["timeframe"]
-    heikinashi  = config["trading"].getboolean("heikinashi")
 
-    loglevel    = config["logging"].getint("loglevel")
+    # Prioritize command line arguments over configuration file.
+    # Since we do not require any arguments, we rely on there being a config file.
+
+    pair        = str(args["pair"]) if args["pair"] is not None else config["trading"]["pair"]
+    interval    = str(args["interval"]) if args["interval"] is not None else config["trading"]["interval"]
+    timeframe   = str(args["timeframe"]) if args["timeframe"] is not None else config["trading"]["timeframe"]
+    heikinashi  = bool(args["heikinashi"]) if args["heikinashi"] is not None else config["trading"].getboolean("heikinashi")
+    loglevel    = int(args["loglevel"]) if args["loglevel"] is not None else config["logging"].getint("loglevel")
 
 except Exception as e:
     print(e)
-    sys.exit("Unable to get all required parameters from configuration file")
+    sys.exit("Unable to load configuration")
 
 try:
-    candles     = Candles(token, interval, timeframe, heikinashi, loglevel)
+    candles     = Candles(pair, interval, timeframe, heikinashi, loglevel)
     indicators  = Indicators(loglevel=loglevel)
     signals     = Signals(loglevel=loglevel)
     bookie      = Bookie(signals)
@@ -45,14 +62,13 @@ except:
 
 def open_socket():
 
-    log.info("Connecting to Binance")
-    socket_url = "wss://stream.binance.com:9443/ws/{}@kline_{}".format(token.lower(), interval)
+    socket_url = "wss://stream.binance.com:9443/ws/{}@kline_{}".format(pair.lower(), interval)
     
     ws = websocket.WebSocketApp(socket_url, on_open=websocket_opened, on_close=websocket_closed, on_message=websocket_message)
     ws.run_forever()
 
 def websocket_opened(ws):
-    log.info("Connected!")
+    log.info("Connected to Binance")
 
 def websocket_closed(ws, close_status_code, close_message):
     log.info("Websocket connection closed!")
@@ -118,4 +134,5 @@ def candle_closed(**candle):
     
 if __name__ == "__main__":
 
+    log.info(f"Token pair: {pair}, Interval: {interval}, Timeframe: {timeframe}, Heikin Ashi: {heikinashi}")
     open_socket()
